@@ -1,0 +1,28 @@
+module.exports = `
+query GetReports($disclosed_at:DateTime) {
+      reports(last:100, order_by:{field:disclosed_at, direction:DESC}, where:{ disclosed_at: { _gt: $disclosed_at  }} ) {
+        edges {
+            node {
+                _id
+                id
+                title
+                disclosed_at
+                created_at
+                url
+                reporter {
+                    username
+                }
+                bounties {
+                    amount
+                }
+            }
+            cursor
+        }
+        pageInfo {
+            endCursor
+            hasNextPage
+            hasPreviousPage
+            startCursor
+        }
+    }
+}`

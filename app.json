@@ -1,0 +1,8 @@
+{
+  "name": "cyxbot",
+  "description": "A barebones Node.js app using Express 4",
+  "repository": "https://github.com/CyberLight/cyxbot",
+  "logo": "https://cdn.rawgit.com/CyberLight/cyxbot/master/public/node.svg",
+  "keywords": ["node", "express", "heroku"],
+  "image": "heroku/nodejs"
+}
