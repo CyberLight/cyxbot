@@ -22,9 +22,13 @@ class Bot {
         return moment(strDate).utc().format('YYYY-MM-DD HH:mm:ss UTC+0');
     }
 
+    escapeChars(text) {
+        return text.replace(/([\\\`\*\_\{\}\[\]\(\)\#\+\-\.\!])/g, '\\$1');
+    }
+
     createMessage(node) {
-        return `_Hacktivity_ from *${node.reporter.username}* 
-\`\`\`text \n${node.title}\`\`\` 
+        return `_Hacktivity_ from *${this.escapeChars(node.reporter.username)}* 
+\`\`\`text \n${this.escapeChars(node.title)}\`\`\` 
 ${node.url}
 *Disclosed at:* ${this.formatDate(node.disclosed_at)}
 *Created at:* ${this.formatDate(node.created_at)}`
