@@ -49,6 +49,11 @@ ${node.url}
             disclosed_at: this.lastDiscloseDate
         });
 
+        if (!response.data) {
+            this.process.send(`[WARNING] No response data: ${JSON.stringify(response)}`);
+            return;
+        }
+
         this.process.send(`Received: ${response.data.reports.edges.length} records`);
         response.data.reports.edges.sort(
             (a, b) => ((a.node.disclosed_at < b.node.disclosed_at) ? -1 : ((a.node.disclosed_at > b.node.disclosed_at) ? 1 : 0))
