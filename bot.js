@@ -6,7 +6,15 @@ const FirebaseSync = require('./fbsync');
 const fetch = require('node-fetch');
 fetch.Promise = Promise;
 
+const SECONDS_IN_MINUTE = 60;
+const TELEGRAM_LIMIT_MESSAGES_PER_MINUTE = 20;
+const MILLISECONDS_IN_SECOND = 1000;
+
 let bot = null;
+
+function log(...args) {
+    console.log(...args);
+}
 
 class Bot {
     constructor(firebase, querier, telegramBot, config, process) {
@@ -16,6 +24,7 @@ class Bot {
         this.firebase = firebase;
         this.querier = querier;
         this.telegramBot = telegramBot;
+        this.standardTimeoutInMs = (SECONDS_IN_MINUTE / TELEGRAM_LIMIT_MESSAGES_PER_MINUTE) * MILLISECONDS_IN_SECOND;
     }
 
     formatDate(strDate) {
@@ -35,33 +44,30 @@ ${node.url}
     }
 
     async go() {
-        const alive = await fetch(this.config.baseURL);
-        this.process.send(`alive ${this.config.baseURL} status: ${alive.status}`);
-
-        this.process.send('Bot not sleeping!');
+        log('Bot not sleeping!');
         if (!this.lastDiscloseDate) {
             this.lastDiscloseDate = await this.firebase.get('hackerone/last_disclose_date');
         }
 
-        this.process.send(`lastDiscloseDate: ${this.lastDiscloseDate}`);
+        log(`lastDiscloseDate: ${this.lastDiscloseDate}`);
 
         const response = await this.querier.queryReports({
             disclosed_at: this.lastDiscloseDate
         });
 
         if (!response.data) {
-            this.process.send(`[WARNING] No response data: ${JSON.stringify(response)}`);
+            log(`[WARNING] No response data: ${JSON.stringify(response)}`);
             return;
         }
 
-        this.process.send(`Received: ${response.data.reports.edges.length} records`);
+        log(`Received: ${response.data.reports.edges.length} records`);
         response.data.reports.edges.sort(
             (a, b) => ((a.node.disclosed_at < b.node.disclosed_at) ? -1 : ((a.node.disclosed_at > b.node.disclosed_at) ? 1 : 0))
         );
 
         const reports = response.data.reports.edges.filter(r => r.node.disclosed_at !== this.lastDiscloseDate);
 
-        this.process.send(`But ${reports.length ? 'found' : 'not found'} new records!`);
+        log(`But ${reports.length ? 'found' : 'not found'} new records!`);
 
         if (reports.length > 0) {
             this.lastDiscloseDate = reports[reports.length - 1].node.disclosed_at;
@@ -76,39 +82,36 @@ ${node.url}
                         parse_mode: 'Markdown'
                     }
                 );
-                this.process.send(this.createMessage(report.node));
-                setTimeout(resolve, 2000);
+                log('[BOT]: ', this.createMessage(report.node));
+                setTimeout(resolve, this.standardTimeoutInMs);
             });
         });
     }
 }
 
+function start(config) {
+    const querier = new Querier(config);
+    const firebase = new FirebaseSync(config);
+    const telegramBot = new TelegramBot(config.token, {
+        polling: true
+    });
 
-process.on('message', async (data) => {
-    const message = JSON.parse(data);
-    if (message.type === 'START' && !bot) {
-        const config = message.payload;
-        const querier = new Querier(config);
-        const firebase = new FirebaseSync(config);
-        const telegramBot = new TelegramBot(config.token, {
-            polling: true
-        });
-
-        if (!bot) {
-            bot = new Bot(
-                firebase, 
-                querier, 
-                telegramBot, 
-                config, 
-                process
-            );
-        }
-        process.send('-------------------------- running bot loop ------------------------');
-        function loop()  {
-            return bot.go().then(() => setTimeout(loop, 1000 * config.intervalInSeconds));
-        }
-        await loop();
+    if (!bot) {
+        bot = new Bot(
+            firebase,
+            querier,
+            telegramBot,
+            config,
+            process
+        );
     }
+    process.send('-------------------------- running bot loop ------------------------');
+    function loop() {
+        return bot.go().then(() => setTimeout(loop, 1000 * config.intervalInSeconds));
+    }
+    await loop();
+}
 
-    process.send('OK');    
-});
+module.exports = {
+    start,
+};
