@@ -12,9 +12,6 @@ query GetReports($disclosed_at:DateTime) {
                 reporter {
                     username
                 }
-                bounties {
-                    amount
-                }
             }
             cursor
         }
