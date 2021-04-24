@@ -7,7 +7,7 @@ const fetch = require('node-fetch');
 fetch.Promise = Promise;
 
 const SECONDS_IN_MINUTE = 60;
-const TELEGRAM_LIMIT_MESSAGES_PER_MINUTE = 20;
+const LIMIT_MESSAGES_PER_MINUTE = 10;
 const MILLISECONDS_IN_SECOND = 1000;
 
 let bot = null;
@@ -24,7 +24,7 @@ class Bot {
         this.firebase = firebase;
         this.querier = querier;
         this.telegramBot = telegramBot;
-        this.standardTimeoutInMs = (SECONDS_IN_MINUTE / TELEGRAM_LIMIT_MESSAGES_PER_MINUTE) * MILLISECONDS_IN_SECOND;
+        this.standardTimeoutInMs = (SECONDS_IN_MINUTE / LIMIT_MESSAGES_PER_MINUTE) * MILLISECONDS_IN_SECOND;
     }
 
     formatDate(strDate) {
@@ -83,7 +83,7 @@ ${node.url}
                     }
                 );
                 log('[BOT]: ', this.createMessage(report.node));
-                setTimeout(resolve, this.standardTimeoutInMs);
+                Promise.delay(this.standardTimeoutInMs).then(resolve);
             });
         });
     }
