@@ -105,7 +105,7 @@ async function start(config) {
             process
         );
     }
-    process.send('-------------------------- running bot loop ------------------------');
+    log('-------------------------- running bot loop ------------------------');
     function loop() {
         return bot.go().then(() => setTimeout(loop, 1000 * config.intervalInSeconds));
     }
