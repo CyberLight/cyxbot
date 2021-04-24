@@ -89,7 +89,7 @@ ${node.url}
     }
 }
 
-function start(config) {
+async function start(config) {
     const querier = new Querier(config);
     const firebase = new FirebaseSync(config);
     const telegramBot = new TelegramBot(config.token, {
